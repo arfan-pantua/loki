@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ubuntu
+  labels:
+    app: ubuntu
+spec:
+  affinity:
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - loki
+        topologyKey: "kubernetes.io/hostname"
+  volumes:
+    - name: pv-storage
+      persistentVolumeClaim:
+        claimName: storage-loki-local #existing pvc name of loki
+  containers:
+  - name: ubuntu
+    image: ubuntu:22.04
+    command: ["/bin/sleep", "3650d"]
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: "/home"
+        name: pv-storage
+  restartPolicy: Always

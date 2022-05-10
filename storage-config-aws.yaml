@@ -1,0 +1,76 @@
+image:
+  repository: grafana/loki
+  tag: 2.4.2
+config:
+  auth_enabled: false
+  ingester:
+    chunk_idle_period: 3m
+    chunk_block_size: 262144
+    chunk_retain_period: 1m
+    max_transfer_retries: 0
+    lifecycler:
+      ring:
+        kvstore:
+          store: inmemory
+        replication_factor: 1
+    wal:
+      enabled: true
+      dir: /data/loki/wal
+      flush_on_shutdown: true
+
+  schema_config:
+    configs:
+    - from: 2020-07-01
+      store: boltdb-shipper
+      object_store: aws
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+  server:
+    http_listen_port: 3100
+  storage_config:
+    aws:
+      s3: s3://ap-southeast-1/hx-loki-test
+      s3forcepathstyle: true
+    boltdb_shipper:
+      active_index_directory: /data/loki/boltdb-shipper-active
+      cache_location: /data/loki/boltdb-shipper-cache
+      cache_ttl: 24h         # Can be increased for faster performance over longer query periods, uses more disk space
+      shared_store: s3
+  chunk_store_config:
+    max_look_back_period: 0s
+  table_manager:
+    retention_deletes_enabled: false
+    retention_period: 0s
+  compactor:
+    working_directory: /data/compactor
+    shared_store: s3
+    compaction_interval: 5m
+persistence:
+  enabled: true
+  existingClaim: "storage-loki-local" # existing PVC name
+
+replicas: 2
+
+
+securityContext:
+  fsGroup: 10001
+  runAsGroup: 10001
+  runAsNonRoot: true
+  runAsUser: 10001
+
+service:
+  type: ClusterIP
+  nodePort:
+  port: 3100
+  annotations: {}
+  labels: {}
+  targetPort: http-metrics
+
+serviceAccount:
+  create: false
+  name: loki-service-account
+  annotations: {}
+
+terminationGracePeriodSeconds: 4800
